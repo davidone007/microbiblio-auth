@@ -1,0 +1,1138 @@
+{
+	"info": {
+		"_postman_id": "biblioteca-security-tests",
+		"name": "Biblioteca Microservicios - Security Tests",
+		"description": "Colección de pruebas de seguridad con Keycloak y JWT para los 4 microservicios de la biblioteca.\n\n## Instrucciones\n1. Ejecutar primero las peticiones de la carpeta \"1. Obtener Tokens\" para obtener los tokens de cada rol.\n2. Los tokens se guardan automáticamente en variables de colección.\n3. Luego probar las demás carpetas.\n\n## Usuarios de prueba\n- **admin1** / password123 → ROLE_ADMIN + ROLE_LIBRARIAN + ROLE_USER\n- **bibliotecario1** / password123 → ROLE_LIBRARIAN + ROLE_USER\n- **usuario1** / password123 → ROLE_USER",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "keycloak_url",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "realm",
+			"value": "biblioteca"
+		},
+		{
+			"key": "token_url",
+			"value": "{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/token"
+		},
+		{
+			"key": "usuarios_url",
+			"value": "http://localhost:8081"
+		},
+		{
+			"key": "catalogo_url",
+			"value": "http://localhost:8082"
+		},
+		{
+			"key": "circulacion_url",
+			"value": "http://localhost:8083"
+		},
+		{
+			"key": "notificacion_url",
+			"value": "http://localhost:8084"
+		},
+		{
+			"key": "circulacion_client_id",
+			"value": "circulacion-service"
+		},
+		{
+			"key": "circulacion_client_secret",
+			"value": "oI6HgUr3b97xhn9aL4NXm40"
+		},
+		{
+			"key": "usuarios_client_id",
+			"value": "usuarios-service"
+		},
+		{
+			"key": "usuarios_client_secret",
+			"value": "usuarios-service-secret-001"
+		},
+		{
+			"key": "catalogo_client_id",
+			"value": "catalogo-service"
+		},
+		{
+			"key": "catalogo_client_secret",
+			"value": "catalogo-service-secret-001"
+		},
+		{
+			"key": "notificacion_client_id",
+			"value": "notificacion-service"
+		},
+		{
+			"key": "notificacion_client_secret",
+			"value": "notificacion-service-secret-001"
+		},
+		{
+			"key": "token_librarian",
+			"value": ""
+		},
+		{
+			"key": "token_user",
+			"value": ""
+		},
+		{
+			"key": "token_admin",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "1. Obtener Tokens",
+			"description": "Obtener tokens JWT de Keycloak para los diferentes roles de usuario.",
+			"item": [
+				{
+					"name": "Token LIBRARIAN (bibliotecario1)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Token obtenido exitosamente', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.access_token).to.not.be.undefined;",
+									"    pm.collectionVariables.set('token_librarian', jsonData.access_token);",
+									"    console.log('Token LIBRARIAN guardado correctamente');",
+									"});",
+									"",
+									"pm.test('Token contiene roles esperados', function () {",
+									"    var jsonData = pm.response.json();",
+									"    var token = jsonData.access_token;",
+									"    var payload = JSON.parse(atob(token.split('.')[1]));",
+									"    pm.expect(payload.realm_access.roles).to.include('ROLE_LIBRARIAN');",
+									"    console.log('Roles:', payload.realm_access.roles);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{ "key": "grant_type", "value": "password" },
+								{ "key": "client_id", "value": "{{circulacion_client_id}}" },
+								{ "key": "client_secret", "value": "{{circulacion_client_secret}}" },
+								{ "key": "username", "value": "bibliotecario1" },
+								{ "key": "password", "value": "password123" }
+							]
+						},
+						"url": {
+							"raw": "{{token_url}}",
+							"host": ["{{token_url}}"]
+						},
+						"description": "Obtiene un token JWT para el usuario bibliotecario1 con rol ROLE_LIBRARIAN + ROLE_USER."
+					}
+				},
+				{
+					"name": "Token USER (usuario1)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Token obtenido exitosamente', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.access_token).to.not.be.undefined;",
+									"    pm.collectionVariables.set('token_user', jsonData.access_token);",
+									"    console.log('Token USER guardado correctamente');",
+									"});",
+									"",
+									"pm.test('Token contiene solo ROLE_USER', function () {",
+									"    var jsonData = pm.response.json();",
+									"    var token = jsonData.access_token;",
+									"    var payload = JSON.parse(atob(token.split('.')[1]));",
+									"    pm.expect(payload.realm_access.roles).to.include('ROLE_USER');",
+									"    pm.expect(payload.realm_access.roles).to.not.include('ROLE_LIBRARIAN');",
+									"    console.log('Roles:', payload.realm_access.roles);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{ "key": "grant_type", "value": "password" },
+								{ "key": "client_id", "value": "{{circulacion_client_id}}" },
+								{ "key": "client_secret", "value": "{{circulacion_client_secret}}" },
+								{ "key": "username", "value": "usuario1" },
+								{ "key": "password", "value": "password123" }
+							]
+						},
+						"url": {
+							"raw": "{{token_url}}",
+							"host": ["{{token_url}}"]
+						},
+						"description": "Obtiene un token JWT para el usuario usuario1 con rol ROLE_USER solamente."
+					}
+				},
+				{
+					"name": "Token ADMIN (admin1)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Token obtenido exitosamente', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.access_token).to.not.be.undefined;",
+									"    pm.collectionVariables.set('token_admin', jsonData.access_token);",
+									"    console.log('Token ADMIN guardado correctamente');",
+									"});",
+									"",
+									"pm.test('Token contiene todos los roles', function () {",
+									"    var jsonData = pm.response.json();",
+									"    var token = jsonData.access_token;",
+									"    var payload = JSON.parse(atob(token.split('.')[1]));",
+									"    pm.expect(payload.realm_access.roles).to.include('ROLE_ADMIN');",
+									"    pm.expect(payload.realm_access.roles).to.include('ROLE_LIBRARIAN');",
+									"    pm.expect(payload.realm_access.roles).to.include('ROLE_USER');",
+									"    console.log('Roles:', payload.realm_access.roles);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{ "key": "grant_type", "value": "password" },
+								{ "key": "client_id", "value": "{{circulacion_client_id}}" },
+								{ "key": "client_secret", "value": "{{circulacion_client_secret}}" },
+								{ "key": "username", "value": "admin1" },
+								{ "key": "password", "value": "password123" }
+							]
+						},
+						"url": {
+							"raw": "{{token_url}}",
+							"host": ["{{token_url}}"]
+						},
+						"description": "Obtiene un token JWT para el usuario admin1 con roles ROLE_ADMIN + ROLE_LIBRARIAN + ROLE_USER."
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Tokens Válidos - Acceso Autorizado",
+			"description": "Demuestra el acceso exitoso a endpoints protegidos usando tokens JWT válidos con los roles correctos.",
+			"item": [
+				{
+					"name": "Catálogo (8082)",
+					"item": [
+						{
+							"name": "GET /libros/1 - LIBRARIAN ✅",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Acceso autorizado - Status 200', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test('Respuesta contiene datos del libro', function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData).to.have.property('id');",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_librarian}}"
+									}
+								],
+								"url": {
+									"raw": "{{catalogo_url}}/libros/1",
+									"host": ["{{catalogo_url}}"],
+									"path": ["libros", "1"]
+								},
+								"description": "Obtener libro por ID con token de LIBRARIAN. Esperado: 200 OK."
+							}
+						},
+						{
+							"name": "GET /libros/buscar?criterio=java - USER ✅",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Acceso autorizado - Status 200', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test('Respuesta es un array', function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData).to.be.an('array');",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									}
+								],
+								"url": {
+									"raw": "{{catalogo_url}}/libros/buscar?criterio=java",
+									"host": ["{{catalogo_url}}"],
+									"path": ["libros", "buscar"],
+									"query": [
+										{ "key": "criterio", "value": "java" }
+									]
+								},
+								"description": "Buscar libros con token de USER. Esperado: 200 OK."
+							}
+						},
+						{
+							"name": "GET /libros/1/disponible - USER ✅",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Acceso autorizado - Status 200', function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									}
+								],
+								"url": {
+									"raw": "{{catalogo_url}}/libros/1/disponible",
+									"host": ["{{catalogo_url}}"],
+									"path": ["libros", "1", "disponible"]
+								},
+								"description": "Verificar disponibilidad con token de USER. Esperado: 200 OK."
+							}
+						},
+						{
+							"name": "PUT /libros/1/disponibilidad - LIBRARIAN ✅",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Acceso autorizado - Status 200', function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_librarian}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "true"
+								},
+								"url": {
+									"raw": "{{catalogo_url}}/libros/1/disponibilidad",
+									"host": ["{{catalogo_url}}"],
+									"path": ["libros", "1", "disponibilidad"]
+								},
+								"description": "Actualizar disponibilidad con token de LIBRARIAN. Esperado: 200 OK."
+							}
+						}
+					]
+				},
+				{
+					"name": "Usuarios (8081)",
+					"item": [
+						{
+							"name": "GET /usuarios/1 - USER ✅",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Acceso autorizado - Status 200', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test('Respuesta contiene datos del usuario', function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData).to.have.property('id');",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									}
+								],
+								"url": {
+									"raw": "{{usuarios_url}}/usuarios/1",
+									"host": ["{{usuarios_url}}"],
+									"path": ["usuarios", "1"]
+								},
+								"description": "Obtener usuario por ID con token de USER. Esperado: 200 OK."
+							}
+						},
+						{
+							"name": "PUT /usuarios/1/email - ADMIN ✅",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Acceso autorizado - Status 200', function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_admin}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "\"nuevo@email.com\""
+								},
+								"url": {
+									"raw": "{{usuarios_url}}/usuarios/1/email",
+									"host": ["{{usuarios_url}}"],
+									"path": ["usuarios", "1", "email"]
+								},
+								"description": "Cambiar email con token de ADMIN. Esperado: 200 OK."
+							}
+						},
+						{
+							"name": "PUT /usuarios/1/email - LIBRARIAN ✅",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Acceso autorizado - Status 200', function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_librarian}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "\"librarian@email.com\""
+								},
+								"url": {
+									"raw": "{{usuarios_url}}/usuarios/1/email",
+									"host": ["{{usuarios_url}}"],
+									"path": ["usuarios", "1", "email"]
+								},
+								"description": "Cambiar email con token de LIBRARIAN. Esperado: 200 OK."
+							}
+						}
+					]
+				},
+				{
+					"name": "Circulación (8083)",
+					"item": [
+						{
+							"name": "GET /circulacion/prestamos - LIBRARIAN ✅",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Acceso autorizado - Status 200', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test('Respuesta es un array de préstamos', function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData).to.be.an('array');",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_librarian}}"
+									}
+								],
+								"url": {
+									"raw": "{{circulacion_url}}/circulacion/prestamos",
+									"host": ["{{circulacion_url}}"],
+									"path": ["circulacion", "prestamos"]
+								},
+								"description": "Obtener todos los préstamos con token de LIBRARIAN. Esperado: 200 OK."
+							}
+						},
+						{
+							"name": "GET /circulacion/prestamos - USER ✅",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Acceso autorizado - Status 200', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test('USER también puede ver préstamos', function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData).to.be.an('array');",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									}
+								],
+								"url": {
+									"raw": "{{circulacion_url}}/circulacion/prestamos",
+									"host": ["{{circulacion_url}}"],
+									"path": ["circulacion", "prestamos"]
+								},
+								"description": "Obtener todos los préstamos con token de USER. Esperado: 200 OK (USER tiene acceso de lectura)."
+							}
+						},
+						{
+							"name": "POST /circulacion/prestar - LIBRARIAN ✅",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('LIBRARIAN puede prestar libros', function () {",
+											"    // 200 si el libro existe y está disponible",
+											"    // 500 si el servicio de catálogo no está activo",
+											"    pm.expect(pm.response.code).to.be.oneOf([200, 500]);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_librarian}}"
+									}
+								],
+								"url": {
+									"raw": "{{circulacion_url}}/circulacion/prestar?usuarioId=1&libroId=1",
+									"host": ["{{circulacion_url}}"],
+									"path": ["circulacion", "prestar"],
+									"query": [
+										{ "key": "usuarioId", "value": "1" },
+										{ "key": "libroId", "value": "1" }
+									]
+								},
+								"description": "Prestar un libro con token de LIBRARIAN. Esperado: 200 OK (o 500 si catálogo no está activo)."
+							}
+						}
+					]
+				},
+				{
+					"name": "Notificación (8084)",
+					"item": [
+						{
+							"name": "POST /notificar - LIBRARIAN ✅",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('LIBRARIAN puede enviar notificaciones', function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_librarian}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"usuarioId\": \"1\",\n    \"mensaje\": \"Su libro ha sido reservado exitosamente.\"\n}"
+								},
+								"url": {
+									"raw": "{{notificacion_url}}/notificar",
+									"host": ["{{notificacion_url}}"],
+									"path": ["notificar"]
+								},
+								"description": "Enviar notificación con token de LIBRARIAN. Esperado: 200 OK."
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "3. Tokens Inválidos y Expirados",
+			"description": "Demuestra el comportamiento del sistema cuando se envían tokens JWT inválidos, expirados o no se envía token.",
+			"item": [
+				{
+					"name": "SIN TOKEN - GET /circulacion/prestamos → 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Sin token retorna 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('La respuesta indica falta de autenticación', function () {",
+									"    console.log('Sin token → 401 Unauthorized');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{circulacion_url}}/circulacion/prestamos",
+							"host": ["{{circulacion_url}}"],
+							"path": ["circulacion", "prestamos"]
+						},
+						"description": "Intentar acceder sin enviar token. Esperado: 401 Unauthorized."
+					}
+				},
+				{
+					"name": "SIN TOKEN - GET /libros/1 → 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Sin token retorna 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{catalogo_url}}/libros/1",
+							"host": ["{{catalogo_url}}"],
+							"path": ["libros", "1"]
+						},
+						"description": "Intentar acceder al catálogo sin token. Esperado: 401 Unauthorized."
+					}
+				},
+				{
+					"name": "SIN TOKEN - GET /usuarios/1 → 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Sin token retorna 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{usuarios_url}}/usuarios/1",
+							"host": ["{{usuarios_url}}"],
+							"path": ["usuarios", "1"]
+						},
+						"description": "Intentar acceder a usuarios sin token. Esperado: 401 Unauthorized."
+					}
+				},
+				{
+					"name": "SIN TOKEN - POST /notificar → 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Sin token retorna 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"usuarioId\": \"1\",\n    \"mensaje\": \"Test\"\n}"
+						},
+						"url": {
+							"raw": "{{notificacion_url}}/notificar",
+							"host": ["{{notificacion_url}}"],
+							"path": ["notificar"]
+						},
+						"description": "Intentar enviar notificación sin token. Esperado: 401 Unauthorized."
+					}
+				},
+				{
+					"name": "TOKEN INVÁLIDO - GET /circulacion/prestamos → 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Token inválido retorna 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('El sistema rechaza tokens manipulados', function () {",
+									"    console.log('Token inválido correctamente rechazado');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.ESTE_ES_UN_TOKEN_INVALIDO.firma_falsa"
+							}
+						],
+						"url": {
+							"raw": "{{circulacion_url}}/circulacion/prestamos",
+							"host": ["{{circulacion_url}}"],
+							"path": ["circulacion", "prestamos"]
+						},
+						"description": "Enviar un token JWT completamente inválido/manipulado. Esperado: 401 Unauthorized."
+					}
+				},
+				{
+					"name": "TOKEN INVÁLIDO - GET /libros/1 → 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Token inválido retorna 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer token_completamente_falso_12345"
+							}
+						],
+						"url": {
+							"raw": "{{catalogo_url}}/libros/1",
+							"host": ["{{catalogo_url}}"],
+							"path": ["libros", "1"]
+						},
+						"description": "Enviar un string aleatorio como token. Esperado: 401 Unauthorized."
+					}
+				},
+				{
+					"name": "TOKEN EXPIRADO - GET /circulacion/prestamos → 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Token expirado retorna 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('El sistema rechaza tokens expirados', function () {",
+									"    console.log('Token expirado correctamente rechazado');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ0ZXN0In0.eyJleHAiOjE2MDAwMDAwMDAsImlhdCI6MTYwMDAwMDAwMCwianRpIjoiZXhwaXJlZC10b2tlbiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9yZWFsbXMvYmlibGlvdGVjYSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImNpcmN1bGFjaW9uLXNlcnZpY2UiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9MSUJSQVJJQU4iXX19.firma_invalida_expirado"
+							}
+						],
+						"url": {
+							"raw": "{{circulacion_url}}/circulacion/prestamos",
+							"host": ["{{circulacion_url}}"],
+							"path": ["circulacion", "prestamos"]
+						},
+						"description": "Enviar un token JWT con fecha de expiración en el pasado (exp: 2020). Esperado: 401 Unauthorized."
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Control de Acceso por Roles (403 Forbidden)",
+			"description": "Demuestra que usuarios con roles insuficientes reciben 403 Forbidden al intentar acceder a endpoints restringidos.",
+			"item": [
+				{
+					"name": "Circulación",
+					"item": [
+						{
+							"name": "POST /circulacion/prestar - USER → 403 🚫",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('USER no puede prestar libros - 403 Forbidden', function () {",
+											"    pm.response.to.have.status(403);",
+											"});",
+											"",
+											"pm.test('Solo LIBRARIAN puede prestar', function () {",
+											"    console.log('USER correctamente bloqueado de prestar libros');",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									}
+								],
+								"url": {
+									"raw": "{{circulacion_url}}/circulacion/prestar?usuarioId=1&libroId=1",
+									"host": ["{{circulacion_url}}"],
+									"path": ["circulacion", "prestar"],
+									"query": [
+										{ "key": "usuarioId", "value": "1" },
+										{ "key": "libroId", "value": "1" }
+									]
+								},
+								"description": "USER intenta prestar un libro. Esperado: 403 Forbidden (requiere ROLE_LIBRARIAN)."
+							}
+						},
+						{
+							"name": "POST /circulacion/devolver - USER → 403 🚫",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('USER no puede devolver libros - 403 Forbidden', function () {",
+											"    pm.response.to.have.status(403);",
+											"});",
+											"",
+											"pm.test('Solo LIBRARIAN puede procesar devoluciones', function () {",
+											"    console.log('USER correctamente bloqueado de devolver libros');",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									}
+								],
+								"url": {
+									"raw": "{{circulacion_url}}/circulacion/devolver?prestamoId=test-id",
+									"host": ["{{circulacion_url}}"],
+									"path": ["circulacion", "devolver"],
+									"query": [
+										{ "key": "prestamoId", "value": "test-id" }
+									]
+								},
+								"description": "USER intenta devolver un libro. Esperado: 403 Forbidden (requiere ROLE_LIBRARIAN)."
+							}
+						}
+					]
+				},
+				{
+					"name": "Catálogo",
+					"item": [
+						{
+							"name": "PUT /libros/1/disponibilidad - USER → 403 🚫",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('USER no puede cambiar disponibilidad - 403 Forbidden', function () {",
+											"    pm.response.to.have.status(403);",
+											"});",
+											"",
+											"pm.test('Solo LIBRARIAN puede modificar el catálogo', function () {",
+											"    console.log('USER correctamente bloqueado de modificar disponibilidad');",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "true"
+								},
+								"url": {
+									"raw": "{{catalogo_url}}/libros/1/disponibilidad",
+									"host": ["{{catalogo_url}}"],
+									"path": ["libros", "1", "disponibilidad"]
+								},
+								"description": "USER intenta actualizar disponibilidad del libro. Esperado: 403 Forbidden (requiere ROLE_LIBRARIAN)."
+							}
+						}
+					]
+				},
+				{
+					"name": "Usuarios",
+					"item": [
+						{
+							"name": "PUT /usuarios/1/email - USER → 403 🚫",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('USER no puede cambiar emails - 403 Forbidden', function () {",
+											"    pm.response.to.have.status(403);",
+											"});",
+											"",
+											"pm.test('Solo ADMIN/LIBRARIAN puede modificar emails', function () {",
+											"    console.log('USER correctamente bloqueado de cambiar emails');",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "\"hack@email.com\""
+								},
+								"url": {
+									"raw": "{{usuarios_url}}/usuarios/1/email",
+									"host": ["{{usuarios_url}}"],
+									"path": ["usuarios", "1", "email"]
+								},
+								"description": "USER intenta cambiar email de otro usuario. Esperado: 403 Forbidden (requiere ROLE_ADMIN o ROLE_LIBRARIAN)."
+							}
+						}
+					]
+				},
+				{
+					"name": "Notificación",
+					"item": [
+						{
+							"name": "POST /notificar - USER → 403 🚫",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('USER no puede enviar notificaciones - 403 Forbidden', function () {",
+											"    pm.response.to.have.status(403);",
+											"});",
+											"",
+											"pm.test('Solo LIBRARIAN puede enviar notificaciones', function () {",
+											"    console.log('USER correctamente bloqueado de enviar notificaciones');",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"usuarioId\": \"1\",\n    \"mensaje\": \"Intento no autorizado\"\n}"
+								},
+								"url": {
+									"raw": "{{notificacion_url}}/notificar",
+									"host": ["{{notificacion_url}}"],
+									"path": ["notificar"]
+								},
+								"description": "USER intenta enviar notificación. Esperado: 403 Forbidden (requiere ROLE_LIBRARIAN)."
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

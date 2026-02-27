@@ -1,0 +1,107 @@
+# ===========================
+# Java & Maven
+# ===========================
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+.mvn/wrapper/maven-wrapper.properties
+mvnw
+mvnw.cmd
+
+# ===========================
+# Spring Boot
+# ===========================
+spring-shell.log
+*.log
+logs/
+
+# ===========================
+# IntelliJ IDEA
+# ===========================
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# ===========================
+# Eclipse / STS
+# ===========================
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# ===========================
+# VS Code
+# ===========================
+.vscode/
+!.vscode/extensions.json
+
+# ===========================
+# NetBeans
+# ===========================
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# ===========================
+# macOS
+# ===========================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ===========================
+# Docker / Keycloak
+# ===========================
+# Mantener los JSONs de exportación pero ignorar datos de volúmenes locales
+keycloak/data/
+docker-compose.override.yml
+
+# ===========================
+# Secrets / Credenciales
+# ===========================
+*.env
+.env
+.env.*
+secrets.properties
+application-local.properties
+application-prod.properties
+
+# ===========================
+# H2 Database (archivos locales)
+# ===========================
+*.db
+*.mv.db
+*.trace.db
+
+# ===========================
+# Test coverage & reports
+# ===========================
+/report/
+*.exec
